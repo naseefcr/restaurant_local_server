@@ -1,0 +1,16 @@
+# Exclude test app from package publication
+local_server_test_app/
+
+# Exclude build artifacts
+build/
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.iml
+
+# Exclude local config
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/

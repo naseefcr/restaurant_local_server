@@ -1,0 +1,14 @@
+name: restaurant_local_server_example
+description: Example application demonstrating the restaurant_local_server package
+version: 1.0.0
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  restaurant_local_server:
+    path: ../
+  http: ^1.1.0
+
+dev_dependencies:
+  test: ^1.24.0

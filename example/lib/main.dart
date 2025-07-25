@@ -9,48 +9,46 @@ void main() async {
     // Create server configuration
     final config = LocalServerConfig(
       serverName: 'Example Restaurant Server',
-      version: '1.0.0',
-      description: 'A simple example server for restaurant management',
-      capabilities: ['orders', 'tables', 'real_time_sync'],
+      serverVersion: '1.0.0',
+      capabilities: {
+        'orders': true,
+        'tables': true,
+        'real_time_sync': true,
+      },
       
       // Network configuration
-      httpPort: 8080,
-      webSocketPort: 8081,
-      discoveryPort: 8082,
+      httpConfig: const HttpServerConfig(
+        httpPort: 8080,
+        enableCors: true,
+      ),
+      webSocketConfig: const WebSocketServerConfig(
+        port: 8081,
+        heartbeatIntervalSeconds: 30,
+      ),
+      discoveryConfig: const DiscoveryConfig(
+        discoveryPort: 8082,
+        broadcastInterval: Duration(seconds: 5),
+      ),
       
-      // Enable all services
-      enableHttpServer: true,
-      enableWebSocketServer: true,
-      enableDiscoveryService: true,
-      
-      // Health monitoring
-      enableHealthMonitoring: true,
+      // Health monitoring and recovery
+      enableAutoRecovery: true,
       healthCheckIntervalSeconds: 30,
-      
-      // Auto recovery
-      autoRecovery: true,
       maxRecoveryAttempts: 3,
-      
-      // Custom metadata
-      customMetadata: {
-        'location': 'Main Branch',
-        'environment': 'example',
-        'features': ['pos', 'inventory', 'reporting'],
-      },
+      enableLogging: true,
     );
 
     // Create event handlers
     final eventHandlers = LocalServerEventHandlers(
-      onStatusChange: (status) {
-        print('📊 Server Status Changed: $status');
+      onStatusChange: (oldStatus, newStatus) {
+        print('📊 Server Status Changed: $oldStatus -> $newStatus');
       },
       
-      onHealthChange: (health) {
-        print('❤️ Server Health: $health');
+      onHealthChange: (oldHealth, newHealth) {
+        print('❤️ Server Health: $oldHealth -> $newHealth');
       },
       
       onClientConnect: (clientId, clientInfo) {
-        print('🔗 Client Connected: $clientId (${clientInfo.clientType})');
+        print('🔗 Client Connected: $clientId');
         print('   Remote Address: ${clientInfo.remoteAddress}');
         print('   User Agent: ${clientInfo.userAgent}');
       },
@@ -59,12 +57,13 @@ void main() async {
         print('🔌 Client Disconnected: $clientId - $reason');
       },
       
-      onError: (error) {
+      onError: (error, details) {
         print('❌ Server Error: $error');
+        if (details != null) print('   Details: $details');
       },
       
-      onRecoveryAttempt: (attempt, maxAttempts, service) {
-        print('🔄 Recovery Attempt $attempt/$maxAttempts for $service');
+      onRecoveryAttempt: (service, attemptNumber) {
+        print('🔄 Recovery Attempt $attemptNumber for $service');
       },
     );
 
@@ -79,22 +78,25 @@ void main() async {
     await serverManager.start();
 
     // Display server information
-    final serverInfo = await serverManager.getServerInfo();
+    final serverInfo = serverManager.serverInfo;
     print('\n✅ Server Started Successfully!');
     print('📋 Server Details:');
-    print('   Name: ${serverInfo.name}');
-    print('   Version: ${serverInfo.version}');
-    print('   Address: ${serverInfo.address}');
-    print('   HTTP Port: ${serverInfo.httpPort}');
-    print('   WebSocket Port: ${serverInfo.webSocketPort}');
-    print('   Discovery Port: ${serverInfo.discoveryPort}');
-    print('   Capabilities: ${serverInfo.capabilities.join(', ')}');
+    if (serverInfo != null) {
+      print('   Name: ${serverInfo.name}');
+      print('   Version: ${serverInfo.version}');
+      print('   IP Address: ${serverInfo.ipAddress}');
+      print('   HTTP Port: ${serverInfo.httpPort}');
+      print('   WebSocket Port: ${serverInfo.webSocketPort}');
+      print('   Capabilities: ${serverInfo.capabilities.keys.join(', ')}');
+    }
 
     // Display access URLs
-    print('\n🌐 Access URLs:');
-    print('   HTTP API: ${serverInfo.httpUrl}');
-    print('   WebSocket: ${serverInfo.webSocketUrl}');
-    print('   Health Check: ${serverInfo.httpUrl}/health');
+    if (serverInfo != null) {
+      print('\n🌐 Access URLs:');
+      print('   HTTP API: ${serverInfo.httpUrl}');
+      print('   WebSocket: ${serverInfo.webSocketUrl}');
+      print('   Health Check: ${serverInfo.httpUrl}/health');
+    }
 
     // Display server statistics periodically
     print('\n📊 Server Statistics:');
@@ -116,19 +118,17 @@ void main() async {
 void _startStatsDisplay(LocalServerManager serverManager) {
   // Update stats every 10 seconds
   Stream.periodic(Duration(seconds: 10)).listen((_) async {
-    final stats = serverManager.getServerStats();
-    final serverInfo = await serverManager.getServerInfo();
+    final stats = serverManager.getStatistics();
     
     print('\n📈 Server Stats Update:');
-    print('   Status: ${stats['status']}');
-    print('   Health: ${stats['health']}');
-    print('   Uptime: ${stats['uptime']}');
-    print('   Connected Clients: ${stats['connectedClients']}');
-    print('   Total Connections: ${stats['totalConnections']}');
-    print('   Active Services: ${stats['activeServices']}');
+    print('   Status: ${stats.status}');
+    print('   Health: ${stats.healthStatus}');
+    print('   Uptime: ${stats.uptime}');
+    print('   Connected Clients: ${stats.connectedClients}');
+    print('   Service Health: ${stats.serviceHealth.keys.join(', ')}');
     
-    if (stats['connectedClients'] > 0) {
-      print('   Client Types: ${stats['clientTypes']}');
+    if (stats.connectedClients > 0) {
+      print('   Connected Client Count: ${stats.connectedClients}');
     }
   });
 }
@@ -146,7 +146,7 @@ void _simulateServerActivity(LocalServerManager serverManager) {
     ];
     
     final message = messages[DateTime.now().millisecond % messages.length];
-    serverManager.broadcastSystemMessage(message);
+    serverManager.broadcastSystemMessage(message: message);
     print('📢 Broadcasted: $message');
   });
 

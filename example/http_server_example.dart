@@ -197,7 +197,7 @@ Middleware requestIdMiddleware() => (Handler innerHandler) {
 void main() async {
   try {
     // Get HTTP server instance
-    final server = HttpServer();
+    final server = LocalHttpServer();
     
     // Add custom route handlers
     server.addRouteHandler(UserRouteHandler());

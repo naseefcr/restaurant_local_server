@@ -1,9 +1,9 @@
 name: restaurant_local_server
 description: A generic Flutter package for building local server applications with UDP discovery, HTTP REST APIs, WebSocket support, and real-time synchronization capabilities.
-version: 1.0.0
-repository: https://github.com/naseefcr/restaurant_billing_system
-homepage: https://github.com/naseefcr/restaurant_billing_system/tree/main/restaurant_local_server
-documentation: https://github.com/naseefcr/restaurant_billing_system/tree/main/restaurant_local_server#readme
+version: 1.0.2
+repository: https://github.com/naseefcr/restaurant_local_server
+homepage: https://github.com/naseefcr/restaurant_local_server
+documentation: https://github.com/naseefcr/restaurant_local_server#readme
 
 environment:
   sdk: ^3.7.2
